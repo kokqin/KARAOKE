@@ -20,6 +20,51 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# 🔒 私人访问认证逻辑 (支持通过 st.secrets 或环境变量设置 APP_PASSWORD)
+def check_password():
+    """检查访问密码，若未配置密码则直接公开，若配置了密码则强制要求验证"""
+    configured_password = None
+    try:
+        if "APP_PASSWORD" in st.secrets:
+            configured_password = st.secrets["APP_PASSWORD"]
+    except Exception:
+        pass
+
+    if not configured_password:
+        configured_password = os.environ.get("APP_PASSWORD", "")
+
+    # 如果未设置任何密码，则无需验证
+    if not configured_password:
+        return True
+
+    def password_entered():
+        if st.session_state.get("password_input") == configured_password:
+            st.session_state["password_correct"] = True
+            st.session_state.pop("password_input", None)
+        else:
+            st.session_state["password_correct"] = False
+
+    if st.session_state.get("password_correct"):
+        return True
+
+    # 显示密码输入界面
+    st.markdown("## 🔒 私人应用访问验证")
+    st.info("此应用已开启私人访问保护，请输入访问密码以解锁使用：")
+    st.text_input(
+        "请输入访问密码", 
+        type="password", 
+        key="password_input", 
+        on_change=password_entered,
+        placeholder="输入密码后按回车..."
+    )
+    if st.session_state.get("password_correct") is False:
+        st.error("❌ 密码错误，请重新输入！")
+    return False
+
+# 执行密码验证，未通过则停止渲染后续内容
+if not check_password():
+    st.stop()
+
 # 侧边栏配置与状态说明
 with st.sidebar:
     st.title("⚙️ 系统与设备")
