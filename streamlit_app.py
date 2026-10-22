@@ -20,45 +20,45 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 🔒 私人访问认证逻辑 (支持通过 st.secrets 或环境变量设置 APP_PASSWORD)
+# 🔒 私人访问认证逻辑 (默认密码: 8888888)
+DEFAULT_PASSWORD = "8888888"
+
 def check_password():
-    """检查访问密码，若未配置密码则直接公开，若配置了密码则强制要求验证"""
-    configured_password = None
+    """检查访问密码，默认密码为 8888888，亦可通过 st.secrets 自定义"""
+    configured_password = DEFAULT_PASSWORD
     try:
-        if "APP_PASSWORD" in st.secrets:
-            configured_password = st.secrets["APP_PASSWORD"]
+        if "APP_PASSWORD" in st.secrets and st.secrets["APP_PASSWORD"]:
+            configured_password = str(st.secrets["APP_PASSWORD"]).strip()
     except Exception:
         pass
 
     if not configured_password:
-        configured_password = os.environ.get("APP_PASSWORD", "")
-
-    # 如果未设置任何密码，则无需验证
-    if not configured_password:
-        return True
-
-    def password_entered():
-        if st.session_state.get("password_input") == configured_password:
-            st.session_state["password_correct"] = True
-            st.session_state.pop("password_input", None)
-        else:
-            st.session_state["password_correct"] = False
+        configured_password = os.environ.get("APP_PASSWORD", DEFAULT_PASSWORD).strip()
 
     if st.session_state.get("password_correct"):
         return True
 
-    # 显示密码输入界面
-    st.markdown("## 🔒 私人应用访问验证")
-    st.info("此应用已开启私人访问保护，请输入访问密码以解锁使用：")
-    st.text_input(
-        "请输入访问密码", 
-        type="password", 
-        key="password_input", 
-        on_change=password_entered,
-        placeholder="输入密码后按回车..."
-    )
-    if st.session_state.get("password_correct") is False:
-        st.error("❌ 密码错误，请重新输入！")
+    # 显示居中的密码输入卡片
+    _, col_center, _ = st.columns([1, 2, 1])
+    with col_center:
+        st.markdown("## 🔒 私人专属 KTV 工具")
+        st.info("此应用已开启私人专属访问保护，请输入密码以解锁：")
+        
+        with st.form("login_form"):
+            user_pwd = st.text_input(
+                "请输入访问密码", 
+                type="password", 
+                placeholder="输入密码..."
+            )
+            submit_btn = st.form_submit_button("🔓 验证并进入", use_container_width=True)
+            
+            if submit_btn:
+                if user_pwd.strip() == configured_password:
+                    st.session_state["password_correct"] = True
+                    st.rerun()
+                else:
+                    st.error("❌ 密码错误，请重新输入！")
+
     return False
 
 # 执行密码验证，未通过则停止渲染后续内容
