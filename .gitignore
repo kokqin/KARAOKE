@@ -1,0 +1,24 @@
+# Python
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+python_env/
+
+# Binaries & large executables
+bin/*.exe
+bin/*.zip
+
+# Media & outputs
+output/*
+!output/.gitkeep
+temp/
+karaoke_sep_*
+
+# OS specific
+.DS_Store
+Thumbs.db
+*.log
